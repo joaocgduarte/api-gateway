@@ -1,0 +1,19 @@
+version: '3'
+services:
+    api-gateway-todos:
+        build: 
+            context: ./src
+            target: ${DOCKER_TARGET}
+        ports: 
+            - ${API_PORT}:${API_PORT}
+        container_name: api-gateway-todos
+        # networks: 
+        #     - todos-infrastructure
+        volumes:
+            - ./src:/go/src/app
+        command: reflex -r "\.go$$" -s -- sh -c "go run ./"
+        env_file: 
+            - ./.env
+# networks:
+#     todos-infrastructure: 
+#         external: true
