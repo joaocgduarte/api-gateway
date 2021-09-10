@@ -6,16 +6,24 @@ import (
 	"github.com/plagioriginal/api-gateway/protos/protos"
 )
 
+type FailRestResponse struct {
+	Errors string
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
 type LoginRequest struct {
-	Username string `validate:"required,min=3"`
-	Password string `validate:"required,min=8"`
+	Username string `validate:"required,min=3" json:"username"`
+	Password string `validate:"required,min=8" json:"password"`
 }
 
 type AddUserRequest struct {
-	Username string `validate:"required,min=3"`
-	Password string `validate:"required,min=3"`
-	Role     string `validate:"required"`
-	JwtToken string `validate:"required"`
+	Username string `validate:"required,min=3" json:"username"`
+	Password string `validate:"required,min=3" json:"password"`
+	Role     string `validate:"required" json:"role"`
+	JwtToken string `validate:"required" json:"token"`
 }
 
 type ListProjectsRequest struct {
