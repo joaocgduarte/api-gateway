@@ -1,21 +1,25 @@
 package domain
 
-import "context"
+import (
+	"context"
+
+	"github.com/plagioriginal/api-gateway/protos/protos"
+)
 
 type LoginRequest struct {
-	Username string
-	Passwor  string
+	Username string `validate:"required,min=3"`
+	Password string `validate:"required,min=8"`
 }
 
 type AddUserRequest struct {
-	Username string
-	Password string
-	Role     string
-	JwtToken string
+	Username string `validate:"required,min=3"`
+	Password string `validate:"required,min=3"`
+	Role     string `validate:"required"`
+	JwtToken string `validate:"required"`
 }
 
 type ListProjectsRequest struct {
-	JwtToken string
+	JwtToken string `validate:"required"`
 	PageNum  uint
 }
 
@@ -24,8 +28,8 @@ type ListProjectsRequest struct {
 //
 // @todo: define the `interfaces{}` with the Objects from the gRPC clients.
 type APIService interface {
-	Login(ctx context.Context, loginRequest LoginRequest) (interface{}, error)
-	RefreshJWT(ctx context.Context, refreshToken string) (interface{}, error)
-	AddUser(ctx context.Context, userRequest AddUserRequest) (interface{}, error)
+	Login(ctx context.Context, loginRequest LoginRequest) (*protos.TokenResponse, error)
+	RefreshJWT(ctx context.Context, refreshToken string) (*protos.TokenResponse, error)
+	AddUser(ctx context.Context, userRequest AddUserRequest) (*protos.UserResponse, error)
 	ListProjects(ctx context.Context, listProjectReq ListProjectsRequest) (interface{}, error)
 }
