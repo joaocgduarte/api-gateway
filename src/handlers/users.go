@@ -9,22 +9,28 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/plagioriginal/api-gateway/domain"
+	"github.com/plagioriginal/api-gateway/http_renderer"
+	"github.com/plagioriginal/api-gateway/middlewares"
 )
 
 type UsersHandler struct {
-	BaseHandler
-	Logger     *log.Logger
-	Validator  *validator.Validate
-	ApiService domain.APIService
+	Logger         *log.Logger
+	Validator      *validator.Validate
+	ApiService     domain.APIService
+	AuthMiddleware middlewares.AuthorizationMiddleware
 }
 
-func NewUserHandler(apiService domain.APIService, v *validator.Validate, l *log.Logger, r *chi.Mux) {
-	handler := UsersHandler{ApiService: apiService, Logger: l, Validator: v}
+func NewUserHandler(apiService domain.APIService, v *validator.Validate, l *log.Logger, aw middlewares.AuthorizationMiddleware, r *chi.Mux) {
+	handler := UsersHandler{ApiService: apiService, Logger: l, Validator: v, AuthMiddleware: aw}
 
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/login", handler.Login)
 		r.Post("/refresh", handler.RefreshJWT)
-		r.Get("/", handler.AddUser)
+
+		r.Group(func(r chi.Router) {
+			r.Use(aw.RequireAdminValidToken)
+			r.Get("/", handler.AddUser)
+		})
 	})
 }
 
@@ -37,7 +43,7 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		uh.Logger.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
-		uh.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
 		return
 	}
 
@@ -46,7 +52,7 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		validationErrors := err.(validator.ValidationErrors).Error()
 		w.WriteHeader(http.StatusBadRequest)
-		uh.JSON(w, r, domain.FailRestResponse{Errors: validationErrors})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: validationErrors})
 		return
 	}
 
@@ -55,12 +61,12 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		uh.Logger.Println(err)
 		w.WriteHeader(http.StatusNotFound)
-		uh.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	uh.JSON(w, r, result)
+	http_renderer.JSON(w, r, result)
 }
 
 func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +78,7 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		uh.Logger.Println(err)
-		uh.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
 		return
 	}
 
@@ -82,7 +88,7 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 		validationErrors := err.(validator.ValidationErrors)
 		uh.Logger.Panicln(validationErrors)
 		w.WriteHeader(http.StatusBadRequest)
-		uh.JSON(w, r, validationErrors)
+		http_renderer.JSON(w, r, validationErrors)
 		return
 	}
 
@@ -90,20 +96,37 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		uh.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	uh.JSON(w, r, result)
+	http_renderer.JSON(w, r, result)
 }
 
 func (uh UsersHandler) AddUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	newJwtToken := ctx.Value("newJwtToken")
+	newRefreshToken := ctx.Value("newRefreshToken")
+	userId := ctx.Value("userId")
+	userRole := ctx.Value("userRole")
+
+	uh.Logger.Println(newJwtToken)
+	uh.Logger.Println(newRefreshToken)
+	uh.Logger.Println(userId)
+	uh.Logger.Println(userRole)
+
+	if newJwtToken != nil && newRefreshToken != nil {
+		w.Header().Set("new-jwt", newJwtToken.(string))
+		w.Header().Set("new-refresh-token", newRefreshToken.(string))
+	}
+
 	response := map[string]string{
 		"hello": "world",
 	}
 
-	uh.JSON(w, r, response)
+	http_renderer.JSON(w, r, response)
 }
 
 func (uh UsersHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
@@ -111,5 +134,5 @@ func (uh UsersHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
 		"hello": "world",
 	}
 
-	uh.JSON(w, r, response)
+	http_renderer.JSON(w, r, response)
 }

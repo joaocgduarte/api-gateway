@@ -13,6 +13,7 @@ import (
 	"github.com/plagioriginal/api-gateway/middlewares"
 	"github.com/plagioriginal/api-gateway/protos/protos"
 	"github.com/plagioriginal/api-gateway/server"
+	"github.com/plagioriginal/api-gateway/tokens"
 	"google.golang.org/grpc"
 )
 
@@ -31,6 +32,9 @@ func main() {
 
 	timeoutContext := time.Duration(2) * time.Second
 	apiService := service.New(userClient, logger, timeoutContext)
+	tokenManager := tokens.NewTokenManager(os.Getenv("JWT_GENERATOR_SECRET"))
+
+	authMiddleware := middlewares.NewAuthorizationMiddleware(tokenManager, userClient, logger)
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -39,7 +43,7 @@ func main() {
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middlewares.SetJsonContentType)
 
-	handlers.NewUserHandler(apiService, validator, logger, r)
+	handlers.NewUserHandler(apiService, validator, logger, authMiddleware, r)
 
 	serverInitializer := server.ServerInitializer{
 		Logger:  logger,
