@@ -1,4 +1,4 @@
-package handlers
+package http_renderer
 
 import (
 	"bytes"
@@ -6,11 +6,9 @@ import (
 	"net/http"
 )
 
-type BaseHandler struct{}
-
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
 // Content-Type as application/json.
-func (bh BaseHandler) JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
+func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(true)
