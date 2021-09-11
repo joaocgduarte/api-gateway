@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/plagioriginal/api-gateway/domain"
 	"github.com/plagioriginal/api-gateway/http_renderer"
@@ -14,6 +15,11 @@ type AuthorizationMiddleware struct {
 	tm domain.TokenManager
 	uc protos.UsersClient
 	l  *log.Logger
+}
+
+type TokenResponse struct {
+	AccessToken  string
+	RefreshToken string
 }
 
 // Returns a new instance of the middleware
@@ -41,7 +47,6 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 		token, err := aw.tm.ParseToken(tokenString)
 
 		if err != nil || !aw.tm.IsTokenValid(token) {
-			aw.l.Println("requesting new tokens...")
 			newTokens, err := aw.getNewTokens(r)
 
 			if err != nil {
@@ -55,8 +60,8 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 			token, _ = aw.tm.ParseToken(newTokens.AccessToken)
 		}
 
-		userId, _ := aw.tm.GetTokenIssuer(token)
 		userRole, _ := aw.tm.GetTokenRole(token)
+		userId, _ := aw.tm.GetTokenIssuer(token)
 
 		ctx = context.WithValue(ctx, "userId", userId)
 		ctx = context.WithValue(ctx, "userRole", userRole)
@@ -82,7 +87,6 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 		token, err := aw.tm.ParseToken(tokenString)
 
 		if err != nil || !aw.tm.IsTokenValid(token) {
-			aw.l.Println("requesting new tokens...")
 			newTokens, err := aw.getNewTokens(r)
 
 			if err != nil {
@@ -91,7 +95,8 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 				return
 			}
 
-			ctx = context.WithValue(ctx, "newAccessTokens", newTokens)
+			ctx = context.WithValue(ctx, "newJwtToken", newTokens.AccessToken)
+			ctx = context.WithValue(ctx, "newRefreshToken", newTokens.RefreshToken)
 			token, _ = aw.tm.ParseToken(newTokens.AccessToken)
 		}
 
@@ -114,10 +119,24 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 }
 
 // Gets new tokens from the UsersClient
-func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (*protos.TokenResponse, error) {
+func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (TokenResponse, error) {
 	refreshToken := aw.tm.GetRefreshTokenFromHeaders(r)
 
-	return aw.uc.Refresh(r.Context(), &protos.RefreshRequest{
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(2)*time.Second)
+	defer cancel()
+
+	refreshRequest := &protos.RefreshRequest{
 		RefreshToken: refreshToken,
-	})
+	}
+
+	res, err := aw.uc.Refresh(ctx, refreshRequest)
+
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	return TokenResponse{
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+	}, nil
 }
