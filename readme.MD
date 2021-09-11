@@ -9,10 +9,12 @@ Manages all other microservices, and exposes an API for frontend clients to use.
 
 ## To-do:
 
-- [ ] Expose a REST Server
-- [ ] Add a validator external package
-- [ ] Interact with other gRPC servers such as the Users gRPC, and the To-dos gRPC (microservices)
-- [ ] Validate authorization tokens (JWTs) for protected endpoints.
+- [X] Expose a REST Server
+- [X] Add a validator external package
+- [X] Interact with other gRPC servers such as the Users gRPC, and the To-dos gRPC (microservices)
+- [X] Validate authorization tokens (JWTs) for protected endpoints.
+- [ ] Add data from to-dos gRPC
+- [ ] Refactor repeated code in middleware.
 
 ## Overall project architecture
 
