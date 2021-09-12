@@ -61,14 +61,14 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 					Value:    newTokens.AccessToken,
 					HttpOnly: true,
 					Path:     "/",
-					SameSite: http.SameSiteNoneMode,
+					Expires:  time.Now().Add(time.Hour * 24 * 14),
 				},
 				{
 					Name:     "refresh-token",
 					Value:    newTokens.RefreshToken,
 					HttpOnly: true,
 					Path:     "/",
-					SameSite: http.SameSiteNoneMode,
+					Expires:  time.Now().Add(time.Hour * 24 * 14),
 				},
 			}
 
@@ -120,14 +120,14 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 					Value:    newTokens.AccessToken,
 					HttpOnly: true,
 					Path:     "/",
-					SameSite: http.SameSiteNoneMode,
+					Expires:  time.Now().Add(time.Hour * 24 * 14),
 				},
 				{
 					Name:     "refresh-token",
 					Value:    newTokens.RefreshToken,
 					HttpOnly: true,
 					Path:     "/",
-					SameSite: http.SameSiteNoneMode,
+					Expires:  time.Now().Add(time.Hour * 24 * 14),
 				},
 			}
 

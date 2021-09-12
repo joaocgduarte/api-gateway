@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -71,14 +72,18 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 			Value:    result.AccessToken,
 			HttpOnly: true,
 			Path:     "/",
-			SameSite: http.SameSiteNoneMode,
+			// SameSite: http.SameSiteNoneMode,
+			Expires: time.Now().Add(time.Hour * 24 * 14),
+			// Secure:   true,
 		},
 		{
 			Name:     "refresh-token",
 			Value:    result.RefreshToken,
 			HttpOnly: true,
 			Path:     "/",
-			SameSite: http.SameSiteNoneMode,
+			// SameSite: http.SameSiteNoneMode,
+			Expires: time.Now().Add(time.Hour * 24 * 14),
+			// Secure:   true,
 		},
 	}
 
@@ -130,14 +135,14 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 			Value:    result.AccessToken,
 			HttpOnly: true,
 			Path:     "/",
-			SameSite: http.SameSiteNoneMode,
+			Expires:  time.Now().Add(time.Hour * 24 * 14),
 		},
 		{
 			Name:     "refresh-token",
 			Value:    result.RefreshToken,
 			HttpOnly: true,
 			Path:     "/",
-			SameSite: http.SameSiteNoneMode,
+			Expires:  time.Now().Add(time.Hour * 24 * 14),
 		},
 	}
 
