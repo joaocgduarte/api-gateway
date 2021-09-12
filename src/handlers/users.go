@@ -97,7 +97,9 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := r.Cookie("refresh-token")
 
 	if err != nil {
-		refreshToken.Value = ""
+		w.WriteHeader(http.StatusNotFound)
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		return
 	}
 
 	request := domain.RefreshRequest{
