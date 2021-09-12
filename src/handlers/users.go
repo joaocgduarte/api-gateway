@@ -65,21 +65,43 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	accessCookies := []http.Cookie{
+		{
+			Name:     "access-token",
+			Value:    result.AccessToken,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+		},
+		{
+			Name:     "refresh-token",
+			Value:    result.RefreshToken,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+		},
+	}
+
+	for _, cookie := range accessCookies {
+		http.SetCookie(w, &cookie)
+	}
+
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, result)
+
 }
 
 func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	request := domain.RefreshRequest{}
-
-	err := json.NewDecoder(r.Body).Decode(&request)
+	refreshToken, err := r.Cookie("refresh-token")
 
 	if err != nil {
-		uh.Logger.Println(err)
-		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
-		return
+		refreshToken.Value = ""
+	}
+
+	request := domain.RefreshRequest{
+		RefreshToken: refreshToken.Value,
 	}
 
 	err = uh.Validator.Var(request.RefreshToken, "required")
@@ -100,6 +122,27 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	accessCookies := []http.Cookie{
+		{
+			Name:     "access-token",
+			Value:    result.AccessToken,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+		},
+		{
+			Name:     "refresh-token",
+			Value:    result.RefreshToken,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+		},
+	}
+
+	for _, cookie := range accessCookies {
+		http.SetCookie(w, &cookie)
+	}
+
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, result)
 }
@@ -107,20 +150,11 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 func (uh UsersHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	newJwtToken := ctx.Value("newJwtToken")
-	newRefreshToken := ctx.Value("newRefreshToken")
 	userId := ctx.Value("userId")
 	userRole := ctx.Value("userRole")
 
-	uh.Logger.Println(newJwtToken)
-	uh.Logger.Println(newRefreshToken)
 	uh.Logger.Println(userId)
 	uh.Logger.Println(userRole)
-
-	if newJwtToken != nil && newRefreshToken != nil {
-		w.Header().Set("new-jwt", newJwtToken.(string))
-		w.Header().Set("new-refresh-token", newRefreshToken.(string))
-	}
 
 	response := map[string]string{
 		"hello": "world",

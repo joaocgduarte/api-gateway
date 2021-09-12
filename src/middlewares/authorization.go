@@ -34,7 +34,7 @@ func NewAuthorizationMiddleware(tm domain.TokenManager, uc protos.UsersClient, l
 // Requires a valid token
 func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		tokenString := aw.tm.GetJWTTokenFromHeaders(r)
+		tokenString := aw.tm.GetJWTTokenFromCookies(r)
 
 		if len(tokenString) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -55,8 +55,27 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 				return
 			}
 
-			ctx = context.WithValue(ctx, "newJwtToken", newTokens.AccessToken)
-			ctx = context.WithValue(ctx, "newRefreshToken", newTokens.RefreshToken)
+			accessCookies := []http.Cookie{
+				{
+					Name:     "access-token",
+					Value:    newTokens.AccessToken,
+					HttpOnly: true,
+					Path:     "/",
+					SameSite: http.SameSiteNoneMode,
+				},
+				{
+					Name:     "refresh-token",
+					Value:    newTokens.RefreshToken,
+					HttpOnly: true,
+					Path:     "/",
+					SameSite: http.SameSiteNoneMode,
+				},
+			}
+
+			for _, cookie := range accessCookies {
+				http.SetCookie(w, &cookie)
+			}
+
 			token, _ = aw.tm.ParseToken(newTokens.AccessToken)
 		}
 
@@ -74,7 +93,7 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 // Requires a valid token from an Admin role
 func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		tokenString := aw.tm.GetJWTTokenFromHeaders(r)
+		tokenString := aw.tm.GetJWTTokenFromCookies(r)
 
 		if len(tokenString) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -95,8 +114,27 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 				return
 			}
 
-			ctx = context.WithValue(ctx, "newJwtToken", newTokens.AccessToken)
-			ctx = context.WithValue(ctx, "newRefreshToken", newTokens.RefreshToken)
+			accessCookies := []http.Cookie{
+				{
+					Name:     "access-token",
+					Value:    newTokens.AccessToken,
+					HttpOnly: true,
+					Path:     "/",
+					SameSite: http.SameSiteNoneMode,
+				},
+				{
+					Name:     "refresh-token",
+					Value:    newTokens.RefreshToken,
+					HttpOnly: true,
+					Path:     "/",
+					SameSite: http.SameSiteNoneMode,
+				},
+			}
+
+			for _, cookie := range accessCookies {
+				http.SetCookie(w, &cookie)
+			}
+
 			token, _ = aw.tm.ParseToken(newTokens.AccessToken)
 		}
 
@@ -120,7 +158,8 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 
 // Gets new tokens from the UsersClient
 func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (TokenResponse, error) {
-	refreshToken := aw.tm.GetRefreshTokenFromHeaders(r)
+	refreshToken := aw.tm.GetRefreshTokenFromCookies(r)
+	aw.l.Println(refreshToken)
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(2)*time.Second)
 	defer cancel()

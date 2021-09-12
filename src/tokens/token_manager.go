@@ -28,20 +28,25 @@ func NewTokenManager(jwtSecret string) domain.TokenManager {
 }
 
 // Gets the token from the bearer header.
-func (t DefaultTokenManager) GetJWTTokenFromHeaders(r *http.Request) string {
-	authHeader := r.Header.Get("Authorization")
+func (t DefaultTokenManager) GetJWTTokenFromCookies(r *http.Request) string {
+	tokenCookie, err := r.Cookie("access-token")
 
-	if len(authHeader) == 0 {
+	if err != nil {
 		return ""
 	}
 
-	token := authHeader[len("Bearer "):]
-	return token
+	return tokenCookie.Value
 }
 
 // Gets the refresh token from the header.
-func (t DefaultTokenManager) GetRefreshTokenFromHeaders(r *http.Request) string {
-	return r.Header.Get("refresh-token")
+func (t DefaultTokenManager) GetRefreshTokenFromCookies(r *http.Request) string {
+	tokenCookie, err := r.Cookie("refresh-token")
+
+	if err != nil {
+		return ""
+	}
+
+	return tokenCookie.Value
 }
 
 // Gets the user ID from token

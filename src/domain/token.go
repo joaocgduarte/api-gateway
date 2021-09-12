@@ -10,8 +10,8 @@ import (
 // To be used on a middleware for the necessary http routes.
 type TokenManager interface {
 	// @todo: replace `interface{}` with proper JWT Object
-	GetRefreshTokenFromHeaders(r *http.Request) string
-	GetJWTTokenFromHeaders(r *http.Request) string
+	GetRefreshTokenFromCookies(r *http.Request) string
+	GetJWTTokenFromCookies(r *http.Request) string
 	ParseToken(tokenString string) (*jwt.Token, error)
 	IsTokenValid(token *jwt.Token) bool
 	GetTokenRole(token *jwt.Token) (string, error)
