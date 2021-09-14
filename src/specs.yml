@@ -1,0 +1,245 @@
+openapi: 3.1.0
+info:
+  title: Microservices Gateway
+  version: '1.0'
+  summary: Gateway For the microservices architecture
+  description: Personal project
+servers:
+  - url: 'http://localhost:8081'
+paths:
+  /users/login:
+    post:
+      summary: Create New User
+      operationId: post-user-login
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples: {}
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Sets the cookie for the refresh token and access token
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+            examples:
+              Login example:
+                username: admin
+                password: password
+        description: Post the necessary fields for the API to create a new user.
+      description: 'Performs a user login, based on username and password'
+    parameters: []
+  /users/logout:
+    post:
+      summary: Create New User
+      operationId: post-user-logout
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples: {}
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Sets the cookie for the refresh token and access token
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: 'Performs a user login, based on username and password'
+      parameters:
+        - schema:
+            type: string
+          in: cookie
+          name: access-token
+        - schema:
+            type: string
+          in: cookie
+          name: refresh-token
+    parameters: []
+  /users/refresh:
+    post:
+      summary: Create New User
+      operationId: post-user
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples: {}
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Sets the cookie for the refresh token and access token
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          headers: {}
+      description: Refreshes the access tokens and refresh tokens
+      parameters:
+        - schema:
+            type: string
+          in: cookie
+          name: access-token
+          description: JWT
+        - schema:
+            type: string
+          in: cookie
+          name: refresh-token
+          description: token to refresh JWT
+    parameters: []
+  /users:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hello-World'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      operationId: get-users
+      description: This is just for testing  purposes
+      parameters:
+        - schema:
+            type: string
+          in: cookie
+          name: refresh-token
+        - schema:
+            type: string
+          in: cookie
+          name: access-token
+components:
+  schemas:
+    User:
+      title: User
+      type: object
+      description: ''
+      examples:
+        - id: 142
+          firstName: Alice
+          lastName: Smith
+          email: alice.smith@gmail.com
+          dateOfBirth: '1997-10-31'
+          emailVerified: true
+          signUpDate: '2019-08-24'
+      properties:
+        Id:
+          description: Unique identifier for the given user.
+          type: string
+        FirstName:
+          type:
+            - string
+            - 'null'
+        LastName:
+          type:
+            - string
+            - 'null'
+        Username:
+          type:
+            - string
+            - 'null'
+          format: email
+        Role:
+          $ref: '#/components/schemas/Role'
+      required:
+        - Id
+        - FirstName
+        - LastName
+        - Username
+    Role:
+      title: Role
+      type: object
+      properties:
+        Id:
+          type: string
+        RoleLabel:
+          type:
+            - string
+            - 'null'
+        RoleSlug:
+          type:
+            - string
+            - 'null'
+    TokenResponse:
+      title: TokenResponse
+      type: object
+      description: ''
+      properties:
+        AccessToken:
+          type:
+            - string
+            - 'null'
+        RefreshToken:
+          type:
+            - string
+            - 'null'
+        User:
+          $ref: '#/components/schemas/User'
+    Error:
+      title: Error
+      type: object
+      properties:
+        Errors:
+          type: string
+    Hello-World:
+      title: Hello-World
+      type: object
+      properties:
+        hello:
+          type: string
+  securitySchemes: {}
