@@ -5,6 +5,7 @@ option go_package = "users/protos";
 service Users {
     rpc AddUser (NewUserRequest) returns (UserResponse);
     rpc Login (LoginRequest) returns (TokenResponse);
+    rpc Logout (RefreshRequest) returns (TokenResponse);
     rpc Refresh (RefreshRequest) returns (TokenResponse);
 }
 

@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UsersClient interface {
 	AddUser(ctx context.Context, in *NewUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	Logout(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 	Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 }
 
@@ -49,6 +50,15 @@ func (c *usersClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.
 	return out, nil
 }
 
+func (c *usersClient) Logout(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, "/Users/Logout", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *usersClient) Refresh(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
 	out := new(TokenResponse)
 	err := c.cc.Invoke(ctx, "/Users/Refresh", in, out, opts...)
@@ -64,6 +74,7 @@ func (c *usersClient) Refresh(ctx context.Context, in *RefreshRequest, opts ...g
 type UsersServer interface {
 	AddUser(context.Context, *NewUserRequest) (*UserResponse, error)
 	Login(context.Context, *LoginRequest) (*TokenResponse, error)
+	Logout(context.Context, *RefreshRequest) (*TokenResponse, error)
 	Refresh(context.Context, *RefreshRequest) (*TokenResponse, error)
 	mustEmbedUnimplementedUsersServer()
 }
@@ -77,6 +88,9 @@ func (UnimplementedUsersServer) AddUser(context.Context, *NewUserRequest) (*User
 }
 func (UnimplementedUsersServer) Login(context.Context, *LoginRequest) (*TokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedUsersServer) Logout(context.Context, *RefreshRequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
 func (UnimplementedUsersServer) Refresh(context.Context, *RefreshRequest) (*TokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
@@ -130,6 +144,24 @@ func _Users_Login_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Users_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Users/Logout",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersServer).Logout(ctx, req.(*RefreshRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Users_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshRequest)
 	if err := dec(in); err != nil {
@@ -162,6 +194,10 @@ var Users_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _Users_Login_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _Users_Logout_Handler,
 		},
 		{
 			MethodName: "Refresh",
