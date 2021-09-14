@@ -1,8 +1,6 @@
 package tokens
 
 import (
-	"net/http"
-
 	"github.com/golang-jwt/jwt"
 	"github.com/plagioriginal/api-gateway/domain"
 )
@@ -25,28 +23,6 @@ func NewTokenManager(jwtSecret string) domain.TokenManager {
 	return DefaultTokenManager{
 		JWTSecret: jwtSecret,
 	}
-}
-
-// Gets the token from the bearer header.
-func (t DefaultTokenManager) GetJWTTokenFromCookies(r *http.Request) string {
-	tokenCookie, err := r.Cookie("access-token")
-
-	if err != nil {
-		return ""
-	}
-
-	return tokenCookie.Value
-}
-
-// Gets the refresh token from the header.
-func (t DefaultTokenManager) GetRefreshTokenFromCookies(r *http.Request) string {
-	tokenCookie, err := r.Cookie("refresh-token")
-
-	if err != nil {
-		return ""
-	}
-
-	return tokenCookie.Value
 }
 
 // Gets the user ID from token

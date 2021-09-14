@@ -35,7 +35,7 @@ func NewAuthorizationMiddleware(tm domain.TokenManager, uc protos.UsersClient, l
 // Requires a valid token
 func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		tokenString := aw.tm.GetJWTTokenFromCookies(r)
+		tokenString := cookies.GetAccessToken(r)
 
 		if len(tokenString) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -75,7 +75,7 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 // Requires a valid token from an Admin role
 func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		tokenString := aw.tm.GetJWTTokenFromCookies(r)
+		tokenString := cookies.GetAccessToken(r)
 
 		if len(tokenString) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -121,7 +121,7 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 
 // Gets new tokens from the UsersClient
 func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (TokenResponse, error) {
-	refreshToken := aw.tm.GetRefreshTokenFromCookies(r)
+	refreshToken := cookies.GetRefreshToken(r)
 	aw.l.Println(refreshToken)
 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(2)*time.Second)

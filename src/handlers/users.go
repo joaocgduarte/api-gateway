@@ -39,16 +39,13 @@ func NewUserHandler(apiService domain.APIService, v *validator.Validate, l *log.
 func (uh UsersHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	tokenCookie, err := r.Cookie("refresh-token")
+	refreshToken := cookies.GetRefreshToken(r)
 
-	if err != nil {
-		uh.Logger.Println(err)
+	if len(refreshToken) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: "Invalid token"})
 		return
 	}
-
-	refreshToken := tokenCookie.Value
 
 	response, err := uh.ApiService.Logout(ctx, refreshToken)
 
@@ -98,6 +95,9 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	cookies.GenerateCookiesFromTokens(w, result.AccessToken, result.RefreshToken)
 
+	result.AccessToken = ""
+	result.RefreshToken = ""
+
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, result)
 
@@ -106,19 +106,19 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	refreshToken, err := r.Cookie("refresh-token")
+	refreshToken := cookies.GetRefreshToken(r)
 
-	if err != nil {
+	if len(refreshToken) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: "Invalid token"})
 		return
 	}
 
 	request := domain.RefreshRequest{
-		RefreshToken: refreshToken.Value,
+		RefreshToken: refreshToken,
 	}
 
-	err = uh.Validator.Var(request.RefreshToken, "required")
+	err := uh.Validator.Var(request.RefreshToken, "required")
 
 	if err != nil {
 		validationErrors := err.(validator.ValidationErrors)
@@ -136,6 +136,9 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookies.GenerateCookiesFromTokens(w, result.AccessToken, result.RefreshToken)
+
+	result.AccessToken = ""
+	result.RefreshToken = ""
 
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, result)

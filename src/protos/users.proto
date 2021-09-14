@@ -28,6 +28,7 @@ message RefreshRequest {
 message TokenResponse {
     string AccessToken = 1;
     string RefreshToken = 2;
+    UserResponse user = 3;
 }
 
 message UserResponse {
