@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/plagioriginal/api-gateway/cookies"
 	"github.com/plagioriginal/api-gateway/domain"
 	"github.com/plagioriginal/api-gateway/http_renderer"
 	"github.com/plagioriginal/api-gateway/protos/protos"
@@ -55,26 +56,7 @@ func (aw AuthorizationMiddleware) RequireValidToken(next http.Handler) http.Hand
 				return
 			}
 
-			accessCookies := []http.Cookie{
-				{
-					Name:     "access-token",
-					Value:    newTokens.AccessToken,
-					HttpOnly: true,
-					Path:     "/",
-					Expires:  time.Now().Add(time.Hour * 24 * 14),
-				},
-				{
-					Name:     "refresh-token",
-					Value:    newTokens.RefreshToken,
-					HttpOnly: true,
-					Path:     "/",
-					Expires:  time.Now().Add(time.Hour * 24 * 14),
-				},
-			}
-
-			for _, cookie := range accessCookies {
-				http.SetCookie(w, &cookie)
-			}
+			cookies.GenerateCookiesFromTokens(w, newTokens.AccessToken, newTokens.RefreshToken)
 
 			token, _ = aw.tm.ParseToken(newTokens.AccessToken)
 		}
@@ -114,26 +96,7 @@ func (aw AuthorizationMiddleware) RequireAdminValidToken(next http.Handler) http
 				return
 			}
 
-			accessCookies := []http.Cookie{
-				{
-					Name:     "access-token",
-					Value:    newTokens.AccessToken,
-					HttpOnly: true,
-					Path:     "/",
-					Expires:  time.Now().Add(time.Hour * 24 * 14),
-				},
-				{
-					Name:     "refresh-token",
-					Value:    newTokens.RefreshToken,
-					HttpOnly: true,
-					Path:     "/",
-					Expires:  time.Now().Add(time.Hour * 24 * 14),
-				},
-			}
-
-			for _, cookie := range accessCookies {
-				http.SetCookie(w, &cookie)
-			}
+			cookies.GenerateCookiesFromTokens(w, newTokens.AccessToken, newTokens.RefreshToken)
 
 			token, _ = aw.tm.ParseToken(newTokens.AccessToken)
 		}

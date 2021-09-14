@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/plagioriginal/api-gateway/cookies"
 	"github.com/plagioriginal/api-gateway/domain"
 	"github.com/plagioriginal/api-gateway/http_renderer"
 	"github.com/plagioriginal/api-gateway/middlewares"
@@ -59,30 +59,7 @@ func (uh UsersHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessCookies := []http.Cookie{
-		{
-			Name:     "access-token",
-			Value:    "",
-			HttpOnly: true,
-			Path:     "/",
-			// SameSite: http.SameSiteNoneMode,
-			Expires: time.Now().Add(time.Hour * 24 * 14),
-			// Secure:   true,
-		},
-		{
-			Name:     "refresh-token",
-			Value:    "",
-			HttpOnly: true,
-			Path:     "/",
-			// SameSite: http.SameSiteNoneMode,
-			Expires: time.Now().Add(time.Hour * 24 * 14),
-			// Secure:   true,
-		},
-	}
-
-	for _, cookie := range accessCookies {
-		http.SetCookie(w, &cookie)
-	}
+	cookies.GenerateCookiesFromTokens(w, "", "")
 
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, response)
@@ -119,30 +96,7 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessCookies := []http.Cookie{
-		{
-			Name:     "access-token",
-			Value:    result.AccessToken,
-			HttpOnly: true,
-			Path:     "/",
-			// SameSite: http.SameSiteNoneMode,
-			Expires: time.Now().Add(time.Hour * 24 * 14),
-			// Secure:   true,
-		},
-		{
-			Name:     "refresh-token",
-			Value:    result.RefreshToken,
-			HttpOnly: true,
-			Path:     "/",
-			// SameSite: http.SameSiteNoneMode,
-			Expires: time.Now().Add(time.Hour * 24 * 14),
-			// Secure:   true,
-		},
-	}
-
-	for _, cookie := range accessCookies {
-		http.SetCookie(w, &cookie)
-	}
+	cookies.GenerateCookiesFromTokens(w, result.AccessToken, result.RefreshToken)
 
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, result)
@@ -168,7 +122,6 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		validationErrors := err.(validator.ValidationErrors)
-		uh.Logger.Panicln(validationErrors)
 		w.WriteHeader(http.StatusBadRequest)
 		http_renderer.JSON(w, r, validationErrors)
 		return
@@ -182,26 +135,7 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessCookies := []http.Cookie{
-		{
-			Name:     "access-token",
-			Value:    result.AccessToken,
-			HttpOnly: true,
-			Path:     "/",
-			Expires:  time.Now().Add(time.Hour * 24 * 14),
-		},
-		{
-			Name:     "refresh-token",
-			Value:    result.RefreshToken,
-			HttpOnly: true,
-			Path:     "/",
-			Expires:  time.Now().Add(time.Hour * 24 * 14),
-		},
-	}
-
-	for _, cookie := range accessCookies {
-		http.SetCookie(w, &cookie)
-	}
+	cookies.GenerateCookiesFromTokens(w, result.AccessToken, result.RefreshToken)
 
 	w.WriteHeader(http.StatusOK)
 	http_renderer.JSON(w, r, result)
