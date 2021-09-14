@@ -15,7 +15,7 @@ type APIDefaultService struct {
 	contextTimeout time.Duration
 }
 
-func New(uc protos.UsersClient, l *log.Logger, contextTimeout time.Duration) APIDefaultService {
+func New(uc protos.UsersClient, l *log.Logger, contextTimeout time.Duration) domain.APIService {
 	return APIDefaultService{
 		UsersClient:    uc,
 		Logger:         l,
@@ -46,6 +46,18 @@ func (as APIDefaultService) RefreshJWT(ctx context.Context, refreshToken string)
 	}
 
 	return as.UsersClient.Refresh(ctx, refreshRequest)
+}
+
+// Handles the user logout.
+func (as APIDefaultService) Logout(ctx context.Context, refreshToken string) (*protos.TokenResponse, error) {
+	_, cancel := context.WithTimeout(ctx, as.contextTimeout)
+	defer cancel()
+
+	refreshRequest := &protos.RefreshRequest{
+		RefreshToken: refreshToken,
+	}
+
+	return as.UsersClient.Logout(ctx, refreshRequest)
 }
 
 func (as APIDefaultService) AddUser(ctx context.Context, userRequest domain.AddUserRequest) (*protos.UserResponse, error) {

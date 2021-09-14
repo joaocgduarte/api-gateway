@@ -27,12 +27,65 @@ func NewUserHandler(apiService domain.APIService, v *validator.Validate, l *log.
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/login", handler.Login)
 		r.Post("/refresh", handler.RefreshJWT)
+		r.Post("/logout", handler.Logout)
 
 		r.Group(func(r chi.Router) {
 			r.Use(aw.RequireAdminValidToken)
 			r.Get("/", handler.AddUser)
 		})
 	})
+}
+
+func (uh UsersHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	tokenCookie, err := r.Cookie("refresh-token")
+
+	if err != nil {
+		uh.Logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		return
+	}
+
+	refreshToken := tokenCookie.Value
+
+	response, err := uh.ApiService.Logout(ctx, refreshToken)
+
+	if err != nil {
+		uh.Logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		http_renderer.JSON(w, r, domain.FailRestResponse{Errors: err.Error()})
+		return
+	}
+
+	accessCookies := []http.Cookie{
+		{
+			Name:     "access-token",
+			Value:    "",
+			HttpOnly: true,
+			Path:     "/",
+			// SameSite: http.SameSiteNoneMode,
+			Expires: time.Now().Add(time.Hour * 24 * 14),
+			// Secure:   true,
+		},
+		{
+			Name:     "refresh-token",
+			Value:    "",
+			HttpOnly: true,
+			Path:     "/",
+			// SameSite: http.SameSiteNoneMode,
+			Expires: time.Now().Add(time.Hour * 24 * 14),
+			// Secure:   true,
+		},
+	}
+
+	for _, cookie := range accessCookies {
+		http.SetCookie(w, &cookie)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	http_renderer.JSON(w, r, response)
 }
 
 func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
