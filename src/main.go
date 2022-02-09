@@ -12,9 +12,9 @@ import (
 	"github.com/plagioriginal/api-gateway/api/service"
 	"github.com/plagioriginal/api-gateway/handlers"
 	"github.com/plagioriginal/api-gateway/middlewares"
-	"github.com/plagioriginal/api-gateway/protos/protos"
 	"github.com/plagioriginal/api-gateway/server"
 	"github.com/plagioriginal/api-gateway/tokens"
+	users "github.com/plagioriginal/users-service-grpc/users"
 	"google.golang.org/grpc"
 )
 
@@ -22,13 +22,17 @@ func main() {
 	logger := log.New(os.Stdout, "api-gateway: ", log.Flags())
 	r := chi.NewRouter()
 
-	conn, err := grpc.Dial("api-users-todos:8080", grpc.WithInsecure())
+	userServiceHost := os.Getenv("USERS_SERVICE_HOST")
+	if len(userServiceHost) == 0 {
+		userServiceHost = "users-service:8080"
+	}
+	conn, err := grpc.Dial(userServiceHost, grpc.WithInsecure())
 	if err != nil {
 		logger.Fatalln(err)
 	}
 	defer conn.Close()
 
-	userClient := protos.NewUsersClient(conn)
+	userClient := users.NewUsersClient(conn)
 	validator := validator.New()
 
 	timeoutContext := time.Duration(2) * time.Second

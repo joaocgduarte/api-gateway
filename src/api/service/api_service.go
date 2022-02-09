@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/plagioriginal/api-gateway/domain"
-	"github.com/plagioriginal/api-gateway/protos/protos"
+	users "github.com/plagioriginal/users-service-grpc/users"
 )
 
 type APIDefaultService struct {
-	UsersClient    protos.UsersClient
+	UsersClient    users.UsersClient
 	Logger         *log.Logger
 	contextTimeout time.Duration
 }
 
-func New(uc protos.UsersClient, l *log.Logger, contextTimeout time.Duration) domain.APIService {
+func New(uc users.UsersClient, l *log.Logger, contextTimeout time.Duration) domain.APIService {
 	return APIDefaultService{
 		UsersClient:    uc,
 		Logger:         l,
@@ -24,11 +24,11 @@ func New(uc protos.UsersClient, l *log.Logger, contextTimeout time.Duration) dom
 }
 
 // Login route handler
-func (as APIDefaultService) Login(ctx context.Context, loginRequest domain.LoginRequest) (*protos.TokenResponse, error) {
+func (as APIDefaultService) Login(ctx context.Context, loginRequest domain.LoginRequest) (*users.TokenResponse, error) {
 	_, cancel := context.WithTimeout(ctx, as.contextTimeout)
 	defer cancel()
 
-	adaptedRequest := &protos.LoginRequest{
+	adaptedRequest := &users.LoginRequest{
 		Username: loginRequest.Username,
 		Password: loginRequest.Password,
 	}
@@ -37,11 +37,11 @@ func (as APIDefaultService) Login(ctx context.Context, loginRequest domain.Login
 }
 
 // Refresh JWT token handler.
-func (as APIDefaultService) RefreshJWT(ctx context.Context, refreshToken string) (*protos.TokenResponse, error) {
+func (as APIDefaultService) RefreshJWT(ctx context.Context, refreshToken string) (*users.TokenResponse, error) {
 	_, cancel := context.WithTimeout(ctx, as.contextTimeout)
 	defer cancel()
 
-	refreshRequest := &protos.RefreshRequest{
+	refreshRequest := &users.RefreshRequest{
 		RefreshToken: refreshToken,
 	}
 
@@ -49,18 +49,18 @@ func (as APIDefaultService) RefreshJWT(ctx context.Context, refreshToken string)
 }
 
 // Handles the user logout.
-func (as APIDefaultService) Logout(ctx context.Context, refreshToken string) (*protos.TokenResponse, error) {
+func (as APIDefaultService) Logout(ctx context.Context, refreshToken string) (*users.TokenResponse, error) {
 	_, cancel := context.WithTimeout(ctx, as.contextTimeout)
 	defer cancel()
 
-	refreshRequest := &protos.RefreshRequest{
+	refreshRequest := &users.RefreshRequest{
 		RefreshToken: refreshToken,
 	}
 
 	return as.UsersClient.Logout(ctx, refreshRequest)
 }
 
-func (as APIDefaultService) AddUser(ctx context.Context, userRequest domain.AddUserRequest) (*protos.UserResponse, error) {
+func (as APIDefaultService) AddUser(ctx context.Context, userRequest domain.AddUserRequest) (*users.UserResponse, error) {
 	return nil, nil
 }
 

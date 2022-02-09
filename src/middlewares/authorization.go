@@ -9,12 +9,12 @@ import (
 	"github.com/plagioriginal/api-gateway/cookies"
 	"github.com/plagioriginal/api-gateway/domain"
 	"github.com/plagioriginal/api-gateway/http_renderer"
-	"github.com/plagioriginal/api-gateway/protos/protos"
+	users "github.com/plagioriginal/users-service-grpc/users"
 )
 
 type AuthorizationMiddleware struct {
 	tm domain.TokenManager
-	uc protos.UsersClient
+	uc users.UsersClient
 	l  *log.Logger
 }
 
@@ -24,7 +24,7 @@ type TokenResponse struct {
 }
 
 // Returns a new instance of the middleware
-func NewAuthorizationMiddleware(tm domain.TokenManager, uc protos.UsersClient, l *log.Logger) AuthorizationMiddleware {
+func NewAuthorizationMiddleware(tm domain.TokenManager, uc users.UsersClient, l *log.Logger) AuthorizationMiddleware {
 	return AuthorizationMiddleware{
 		tm: tm,
 		uc: uc,
@@ -127,7 +127,7 @@ func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (TokenResponse, 
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(2)*time.Second)
 	defer cancel()
 
-	refreshRequest := &protos.RefreshRequest{
+	refreshRequest := &users.RefreshRequest{
 		RefreshToken: refreshToken,
 	}
 

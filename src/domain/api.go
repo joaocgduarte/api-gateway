@@ -3,7 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/plagioriginal/api-gateway/protos/protos"
+	users "github.com/plagioriginal/users-service-grpc/users"
 )
 
 type FailRestResponse struct {
@@ -36,9 +36,9 @@ type ListProjectsRequest struct {
 //
 // @todo: define the `interfaces{}` with the Objects from the gRPC clients.
 type APIService interface {
-	Logout(ctx context.Context, refreshToken string) (*protos.TokenResponse, error)
-	Login(ctx context.Context, loginRequest LoginRequest) (*protos.TokenResponse, error)
-	RefreshJWT(ctx context.Context, refreshToken string) (*protos.TokenResponse, error)
-	AddUser(ctx context.Context, userRequest AddUserRequest) (*protos.UserResponse, error)
+	Logout(ctx context.Context, refreshToken string) (*users.TokenResponse, error)
+	Login(ctx context.Context, loginRequest LoginRequest) (*users.TokenResponse, error)
+	RefreshJWT(ctx context.Context, refreshToken string) (*users.TokenResponse, error)
+	AddUser(ctx context.Context, userRequest AddUserRequest) (*users.UserResponse, error)
 	ListProjects(ctx context.Context, listProjectReq ListProjectsRequest) (interface{}, error)
 }
