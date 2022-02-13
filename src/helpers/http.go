@@ -1,4 +1,4 @@
-package http_renderer
+package helpers
 
 import (
 	"bytes"
