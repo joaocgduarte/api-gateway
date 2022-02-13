@@ -17,11 +17,6 @@ type AuthorizationMiddleware struct {
 	l  *log.Logger
 }
 
-type TokenResponse struct {
-	AccessToken  string
-	RefreshToken string
-}
-
 // Returns a new instance of the middleware
 func NewAuthorizationMiddleware(
 	tm domain.TokenManager,
@@ -53,6 +48,7 @@ func (aw AuthorizationMiddleware) RequireToken(allowedRoles []string) func(next 
 			if err != nil || !aw.tm.IsTokenValid(token) {
 				newTokens, err := aw.getNewTokens(r)
 				if err != nil {
+					aw.l.Printf("error fetching new tokens: %v\n", err)
 					w.WriteHeader(http.StatusUnauthorized)
 					helpers.JSON(w, r, "invalid token")
 					return
@@ -60,16 +56,36 @@ func (aw AuthorizationMiddleware) RequireToken(allowedRoles []string) func(next 
 
 				aw.ch.GenerateCookiesFromTokens(w, newTokens.AccessToken, newTokens.RefreshToken)
 
-				token, _ = aw.tm.ParseToken(newTokens.AccessToken)
+				token, err = aw.tm.ParseToken(newTokens.AccessToken)
+				if err != nil {
+					aw.l.Printf("error parsing token: %v\n", err)
+					w.WriteHeader(http.StatusUnauthorized)
+					helpers.JSON(w, r, "invalid token")
+					return
+				}
 			}
 
-			userRole, _ := aw.tm.GetTokenRole(token)
+			userRole, err := aw.tm.GetTokenRole(token)
+			if err != nil {
+				aw.l.Printf("error fetching the role of the token: %v\n", err)
+				w.WriteHeader(http.StatusUnauthorized)
+				helpers.JSON(w, r, "invalid token")
+				return
+			}
+
 			if len(allowedRoles) > 0 && !helpers.InArray(userRole, allowedRoles) {
 				w.WriteHeader(http.StatusUnauthorized)
 				helpers.JSON(w, r, "invalid token")
 				return
 			}
-			userId, _ := aw.tm.GetTokenIssuer(token)
+			userId, err := aw.tm.GetTokenIssuer(token)
+
+			if err != nil {
+				aw.l.Printf("error issuer of the token: %v\n", err)
+				w.WriteHeader(http.StatusUnauthorized)
+				helpers.JSON(w, r, "invalid token")
+				return
+			}
 
 			ctx := context.WithValue(r.Context(), "userId", userId)
 			ctx = context.WithValue(ctx, "userRole", userRole)
@@ -82,7 +98,7 @@ func (aw AuthorizationMiddleware) RequireToken(allowedRoles []string) func(next 
 }
 
 // Gets new tokens from the UsersClient
-func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (TokenResponse, error) {
+func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (domain.TokenResponse, error) {
 	refreshToken := aw.ch.GetRefreshToken(r)
 	aw.l.Println(refreshToken)
 
@@ -91,10 +107,10 @@ func (aw AuthorizationMiddleware) getNewTokens(r *http.Request) (TokenResponse, 
 
 	res, err := aw.uc.RefreshJWT(ctx, refreshToken)
 	if err != nil {
-		return TokenResponse{}, err
+		return domain.TokenResponse{}, err
 	}
 
-	return TokenResponse{
+	return domain.TokenResponse{
 		AccessToken:  res.AccessToken,
 		RefreshToken: res.RefreshToken,
 	}, nil

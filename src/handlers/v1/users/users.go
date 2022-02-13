@@ -34,7 +34,6 @@ func New(
 
 func (uh UsersHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-
 	refreshToken := uh.CookieHandler.GetRefreshToken(r)
 
 	if len(refreshToken) == 0 {
@@ -46,7 +45,7 @@ func (uh UsersHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	response, err := uh.UsersClient.Logout(ctx, refreshToken)
 
 	if err != nil {
-		uh.Logger.Println(err)
+		uh.Logger.Printf("error on logout %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		helpers.JSON(w, r, "internal error")
 		return
@@ -65,7 +64,7 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&request)
 
 	if err != nil {
-		uh.Logger.Println(err)
+		uh.Logger.Printf("login request body error: %v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
 		helpers.JSON(w, r, "invalid request")
 		return
@@ -81,7 +80,7 @@ func (uh UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	result, err := uh.UsersClient.Login(ctx, request)
 	if err != nil {
-		uh.Logger.Println(err)
+		uh.Logger.Printf("error on client upon login: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		helpers.JSON(w, r, "internal error")
 		return
@@ -122,8 +121,9 @@ func (uh UsersHandler) RefreshJWT(w http.ResponseWriter, r *http.Request) {
 
 	result, err := uh.UsersClient.RefreshJWT(ctx, request.RefreshToken)
 	if err != nil {
+		uh.Logger.Printf("error on client upon refresh: %v\n", err)
 		w.WriteHeader(http.StatusNotFound)
-		helpers.JSON(w, r, "error still don't check what it is")
+		helpers.JSON(w, r, "error still don't check what it is (code)")
 		return
 	}
 
